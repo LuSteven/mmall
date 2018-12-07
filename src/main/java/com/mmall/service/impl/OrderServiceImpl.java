@@ -8,15 +8,12 @@ import com.alipay.demo.trade.model.GoodsDetail;
 import com.alipay.demo.trade.model.builder.AlipayTradePrecreateRequestBuilder;
 import com.alipay.demo.trade.model.result.AlipayF2FPrecreateResult;
 import com.alipay.demo.trade.service.AlipayTradeService;
-import com.alipay.demo.trade.service.impl.AlipayMonitorServiceImpl;
 import com.alipay.demo.trade.service.impl.AlipayTradeServiceImpl;
-import com.alipay.demo.trade.service.impl.AlipayTradeWithHBServiceImpl;
 import com.alipay.demo.trade.utils.ZxingUtils;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Ordering;
 import com.mmall.common.Const;
 import com.mmall.common.ServerResponse;
 import com.mmall.dao.*;
@@ -36,11 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import sun.text.resources.CollationData_en;
-import sun.text.resources.CollationData_uk;
 
-import javax.rmi.CORBA.PortableRemoteObjectDelegate;
-import java.awt.print.PrinterGraphics;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -82,6 +75,7 @@ public class OrderServiceImpl implements IOrderService {
     @Autowired
     private ShippingMapper shippingMapper;
 
+    @Override
     public ServerResponse createOrder(Integer userId, Integer shippingId) {
         //从购物车中获取数据
         List<Cart> cartList = cartMapper.selectCheckedCartByUserId(userId);
@@ -256,6 +250,7 @@ public class OrderServiceImpl implements IOrderService {
         return ServerResponse.createBySuccess(orderItemList);
     }
 
+    @Override
     public ServerResponse<String> cancel(Integer userId, Long orderNo) {
         Order order = orderMapper.selectByUserIdAndOrderNo(userId, orderNo);
         if (order == null) {
@@ -275,7 +270,7 @@ public class OrderServiceImpl implements IOrderService {
         return ServerResponse.createByError();
     }
 
-
+    @Override
     public ServerResponse getOrderCartProduct(Integer userId) {
         OrderProductVo orderProductVo = new OrderProductVo();
         //从购物车中获取数据
@@ -300,6 +295,7 @@ public class OrderServiceImpl implements IOrderService {
         return ServerResponse.createBySuccess(orderProductVo);
     }
 
+    @Override
     public ServerResponse<OrderVo> getOrderDetail(Integer userId, Long orderNo) {
         Order order = orderMapper.selectByUserIdAndOrderNo(userId, orderNo);
         if (order != null) {
@@ -310,6 +306,7 @@ public class OrderServiceImpl implements IOrderService {
         return ServerResponse.createByErrorMessage("没有找到该订单");
     }
 
+    @Override
     public ServerResponse<PageInfo> getOrderList(Integer userId, int pageNum, int pageSize) {
         PageHelper.startPage(pageNum, pageSize);
         List<Order> orderList = orderMapper.selectByUserId(userId);
@@ -335,6 +332,7 @@ public class OrderServiceImpl implements IOrderService {
         return orderVoList;
     }
 
+    @Override
     public ServerResponse pay(Long orderNo, Integer userId, String path) {
         Map<String, String> resultMap = Maps.newHashMap();
         Order order = orderMapper.selectByUserIdAndOrderNo(userId, orderNo);
@@ -390,12 +388,13 @@ public class OrderServiceImpl implements IOrderService {
         }
 
         // 创建扫码支付请求builder，设置请求参数
+        //支付宝服务器主动通知商户服务器里指定的页面http路径,根据需要设置
         AlipayTradePrecreateRequestBuilder builder = new AlipayTradePrecreateRequestBuilder()
                 .setSubject(subject).setTotalAmount(totalAmount).setOutTradeNo(outTradeNo)
                 .setUndiscountableAmount(undiscountableAmount).setSellerId(sellerId).setBody(body)
                 .setOperatorId(operatorId).setStoreId(storeId).setExtendParams(extendParams)
                 .setTimeoutExpress(timeoutExpress)
-                .setNotifyUrl(PropertiesUtil.getProperty("alipay.callback.url"))//支付宝服务器主动通知商户服务器里指定的页面http路径,根据需要设置
+                .setNotifyUrl(PropertiesUtil.getProperty("alipay.callback.url"))
                 .setGoodsDetailList(goodsDetailList);
 
 
@@ -451,7 +450,10 @@ public class OrderServiceImpl implements IOrderService {
         }
     }
 
-    // 简单打印应答
+    /**
+     * 简单打印应答
+     * @param response
+     */
     private void dumpResponse(AlipayResponse response) {
         if (response != null) {
             logger.info(String.format("code:%s, msg:%s", response.getCode(), response.getMsg()));
@@ -463,6 +465,7 @@ public class OrderServiceImpl implements IOrderService {
         }
     }
 
+    @Override
     public ServerResponse aliCallback(Map<String, String> params) {
         Long orderNo = Long.parseLong(params.get("out_trade_no"));
         String tradeNo = params.get("trade_no");
@@ -491,7 +494,7 @@ public class OrderServiceImpl implements IOrderService {
         return ServerResponse.createBySuccess();
     }
 
-
+    @Override
     public ServerResponse queryOrderPayStatus(Integer userId, Long OrderNo) {
         Order order = orderMapper.selectByUserIdAndOrderNo(userId, OrderNo);
         if (order == null) {
@@ -504,9 +507,15 @@ public class OrderServiceImpl implements IOrderService {
     }
 
 
-    //backend
-    public ServerResponse<PageInfo> manageList(int pgaeNum, int pageSize) {
-        PageHelper.startPage(pgaeNum, pageSize);
+    /**
+     * backend
+     * @param pageNum
+     * @param pageSize
+     * @return
+     */
+    @Override
+    public ServerResponse<PageInfo> manageList(int pageNum, int pageSize) {
+        PageHelper.startPage(pageNum, pageSize);
         List<Order> orderList = orderMapper.selectAllOrder();
         List<OrderVo> orderVoList = this.assembleOrderVoList(orderList, null);
         PageInfo pageResult = new PageInfo(orderVoList);
@@ -514,6 +523,7 @@ public class OrderServiceImpl implements IOrderService {
         return ServerResponse.createBySuccess(pageResult);
     }
 
+    @Override
     public ServerResponse<OrderVo> manageDetail(Long orderNo) {
         Order order = orderMapper.selectByOrderNo(orderNo);
         if (order != null) {
@@ -524,6 +534,7 @@ public class OrderServiceImpl implements IOrderService {
         return ServerResponse.createByErrorMessage("订单不存在");
     }
 
+    @Override
     public ServerResponse<PageInfo> manageSearch(Long orderNo, int pageNum, int pageSize) {
         PageHelper.startPage(pageNum, pageSize);
         Order order = orderMapper.selectByOrderNo(orderNo);
@@ -538,6 +549,7 @@ public class OrderServiceImpl implements IOrderService {
         return ServerResponse.createByErrorMessage("订单不存在");
     }
 
+    @Override
     public ServerResponse<String> manageSendGoods(Long orderNo) {
         Order order = orderMapper.selectByOrderNo(orderNo);
         if (order != null) {

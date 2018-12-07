@@ -14,10 +14,7 @@ import com.mmall.util.BigDecimalUtil;
 import com.mmall.util.PropertiesUtil;
 import com.mmall.vo.CartProductVo;
 import com.mmall.vo.CartVo;
-import com.sun.corba.se.spi.activation.Server;
 import org.apache.commons.collections.CollectionUtils;
-import org.omg.PortableInterceptor.INACTIVE;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -36,6 +33,7 @@ public class CartServiceImpl implements ICartService {
     @Autowired
     private ProductMapper productMapper;
 
+    @Override
     public ServerResponse<CartVo> add(Integer userId, Integer productId, Integer count) {
         if(productId ==null || count==null){
             return ServerResponse.createByErrorCodeMessage(ResponseCode.ILLEGAL_ARGUMENT.getCode(),ResponseCode.ILLEGAL_ARGUMENT.getDesc());
@@ -60,6 +58,7 @@ public class CartServiceImpl implements ICartService {
         return list(userId);
     }
 
+    @Override
     public ServerResponse<CartVo> update(Integer userId, Integer productId, Integer count){
         if(productId ==null || count==null){
             return ServerResponse.createByErrorCodeMessage(ResponseCode.ILLEGAL_ARGUMENT.getCode(),ResponseCode.ILLEGAL_ARGUMENT.getDesc());
@@ -73,6 +72,7 @@ public class CartServiceImpl implements ICartService {
         return list(userId);
     }
 
+    @Override
     public ServerResponse<CartVo> deleteProduct(Integer userId,String productIds){
         List<String> productList= Splitter.on(",").splitToList(productIds);
         if(CollectionUtils.isEmpty(productList)){
@@ -82,16 +82,19 @@ public class CartServiceImpl implements ICartService {
         return list(userId);
     }
 
+    @Override
     public ServerResponse<CartVo> list(Integer userId){
         CartVo cartVo=this.getCartVoLimit(userId);
         return ServerResponse.createBySuccess(cartVo);
     }
 
+    @Override
     public ServerResponse<CartVo> selectOrUnSelect(Integer userId,Integer productId,Integer checked){
        cartMapper.checkedOrUncheckedProduct(userId,productId,checked);
         return list(userId);
     }
 
+    @Override
     public ServerResponse<Integer> getCartProductCount(Integer userId){
          if(userId==null){
              return ServerResponse.createBySuccess(0);

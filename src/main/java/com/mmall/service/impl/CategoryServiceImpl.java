@@ -6,13 +6,13 @@ import com.mmall.common.ServerResponse;
 import com.mmall.dao.CategoryMapper;
 import com.mmall.pojo.Category;
 import com.mmall.service.ICategoryService;
-import com.sun.corba.se.spi.activation.Server;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
 import java.util.List;
 import java.util.Set;
 
@@ -27,6 +27,7 @@ public class CategoryServiceImpl  implements ICategoryService{
     @Autowired
     private CategoryMapper categoryMapper;
 
+    @Override
     public ServerResponse addCategory(String categoryName,Integer parentId){
         if(parentId ==null || StringUtils.isBlank(categoryName)){
             return   ServerResponse.createByErrorMessage("添加品类参数错误!");
@@ -44,7 +45,8 @@ public class CategoryServiceImpl  implements ICategoryService{
         return ServerResponse.createByErrorMessage("添加品类失败");
     }
 
-    public ServerResponse updateCaregoryName(Integer categoryId,String categoryName){
+    @Override
+    public ServerResponse updateCategoryName(Integer categoryId,String categoryName){
         if(categoryId ==null || StringUtils.isBlank(categoryName)){
             return   ServerResponse.createByErrorMessage("更新品类参数错误!");
         }
@@ -59,6 +61,7 @@ public class CategoryServiceImpl  implements ICategoryService{
         return ServerResponse.createByErrorMessage("更新品类名字失败");
     }
 
+    @Override
     public ServerResponse<List<Category>> getChildrenParallelCategory(Integer categoryId){
         List<Category> categoryList=categoryMapper.selectCategoryChildrenByParentId(categoryId);
         if(CollectionUtils.isEmpty(categoryList)){
@@ -72,6 +75,7 @@ public class CategoryServiceImpl  implements ICategoryService{
      * @param categoryId
      * @return
      */
+    @Override
     public ServerResponse<List<Integer>> selectCategoryAndChildrenById(Integer categoryId){
         Set<Category> categorySet= Sets.newHashSet();
         findChildCategory(categorySet,categoryId);
@@ -83,7 +87,13 @@ public class CategoryServiceImpl  implements ICategoryService{
         }
         return ServerResponse.createBySuccess(categoryIdList);
     }
-    ///递归算法，算出子节点
+
+    /**
+     * 递归算法，算出子节点
+     * @param categorySet
+     * @param categoryId
+     * @return
+     */
     public Set<Category> findChildCategory(Set<Category> categorySet,Integer categoryId){
         Category category=categoryMapper.selectByPrimaryKey(categoryId);
         if(category !=null){
